@@ -205,6 +205,16 @@ export const useQueue = createGlobalState(() => {
     return count;
   }
 
+  function addPlaynightItems(items: { game: Game; durationMinutes: number; durationSeconds: number }[]): number {
+    let count = 0;
+    for (const entry of items) {
+      if (addToQueue(entry.game, undefined, { minutes: entry.durationMinutes, seconds: entry.durationSeconds })) {
+        count++;
+      }
+    }
+    return count;
+  }
+
   async function removeFromQueue(itemId: string) {
     const index = queueItems.value.findIndex(item => item.id === itemId);
     if (index === -1) return;
@@ -571,6 +581,7 @@ export const useQueue = createGlobalState(() => {
     // Actions
     addToQueue,
     addMultipleToQueue,
+    addPlaynightItems,
     removeFromQueue,
     updateItemDuration,
     applyDefaultDurationToAll,

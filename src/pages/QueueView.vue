@@ -212,8 +212,15 @@
           </button>
         </div>
 
-        <!-- Secondary Queue actions -->
+        <!-- Playnight & Secondary Queue actions -->
         <div class="flex items-center gap-2 text-xs">
+          <button
+            @click="showPlaynightModal = true"
+            class="px-3.5 py-1.5 rounded-lg text-xs font-bold text-white bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 shadow-sm transition-all flex items-center gap-1.5 active:scale-95"
+            title="Auto-generate random games with custom times within total night duration"
+          >
+            <span>🌙 Playnight</span>
+          </button>
           <button
             @click="resetQueue"
             :disabled="totalItems === 0 || isQueueRunning"
@@ -579,16 +586,20 @@
         </div>
       </div>
     </div>
+
+    <!-- Playnight Modal Component -->
+    <PlaynightModal v-model="showPlaynightModal" />
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, computed, shallowRef } from 'vue';
+import { ref } from 'vue';
 import { useQueue } from '@/composables/use-queue';
 import { useFetchGameList } from '@/composables/fetch-gamelist';
-import { useFuse } from '@vueuse/integrations/useFuse';
-import { onClickOutside, refDebounced } from '@vueuse/core';
+import { useGameSearch } from '@/composables/use-game-search';
+import { onClickOutside } from '@vueuse/core';
 import { Game } from '@/types/types';
+import PlaynightModal from '@/components/PlaynightModal.vue';
 
 const {
   queueItems,
@@ -626,30 +637,16 @@ const {
   formatSeconds,
 } = useQueue();
 
-// Quick add search
+// Quick add search using high-performance search index
 const { gameDB } = useFetchGameList();
-const searchQuery = shallowRef('');
-const debouncedSearch = refDebounced(searchQuery, 250);
+const { searchQuery, searchResults } = useGameSearch(gameDB);
 const isSearchOpen = ref(false);
+const showPlaynightModal = ref(false);
 const searchContainerRef = ref<HTMLElement | null>(null);
 
 onClickOutside(searchContainerRef, () => {
   isSearchOpen.value = false;
 });
-
-const fuseOptions = computed(() => ({
-  fuseOptions: {
-    keys: [
-      { name: 'name', weight: 0.7 },
-      { name: 'aliases', weight: 0.2 },
-      { name: 'executables.name', weight: 0.1 },
-    ],
-    threshold: 0.4,
-  },
-  resultLimit: 8,
-}));
-
-const { results: searchResults } = useFuse(debouncedSearch, gameDB, fuseOptions);
 
 function handleAddFromSearch(game: Game) {
   addToQueue(game);
